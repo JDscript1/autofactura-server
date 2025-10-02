@@ -13,7 +13,7 @@ const JWT_SECRET = 'autofactura_secret_key_2024';
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.static(__dirname));
 
 // Inițializare baza de date
 const db = new sqlite3.Database('autofactura.db');
@@ -84,7 +84,7 @@ const authenticateToken = (req, res, next) => {
 
 // RUTA PRINCIPALĂ - INTERFAȚA WEB
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // API ENDPOINTS
