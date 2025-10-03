@@ -56,6 +56,13 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Verificare variabile de mediu
+console.log('🔧 Configurare server:');
+console.log('📡 PORT:', PORT);
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('📧 EMAIL_USER:', process.env.EMAIL_USER ? 'Setat' : 'Nu este setat');
+console.log('🔑 EMAIL_PASS:', process.env.EMAIL_PASS ? 'Setat' : 'Nu este setat');
 const JWT_SECRET = 'autofactura_secret_key_2024';
 
 // Middleware de securitate
@@ -1573,8 +1580,20 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
+// Gestionarea erorilor
+process.on('uncaughtException', (error) => {
+    console.error('❌ Eroare neprinsă:', error);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Promise respinsă:', reason);
+    process.exit(1);
+});
+
 // Pornire server
-app.listen(PORT, '0.0.0.0', () => {
+try {
+    app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server AutoFactura SIMPLU pornit pe portul ${PORT}`);
     console.log(`📱 API disponibil la: http://localhost:${PORT}/api`);
     console.log(`🌐 Interfața web la: http://localhost:${PORT}`);
@@ -1583,4 +1602,8 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📱 Pentru dispozitive Android, folosește IP-ul computerului: http://[IP_COMPUTER]:${PORT}/api`);
     console.log(`⚡ Optimizări de performanță activate!`);
     console.log(`📊 Monitoring și cache activat!`);
-});
+    });
+} catch (error) {
+    console.error('❌ Eroare la pornirea serverului:', error);
+    process.exit(1);
+}
