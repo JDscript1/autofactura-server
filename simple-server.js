@@ -115,7 +115,7 @@ const initializeDatabase = async () => {
         if (connected) {
             console.log('✅ Baza de date inițializată cu succes');
             // Sincronizează modelele cu baza de date
-            await sequelize.sync({ force: false });
+            await sequelize.sync({ alter: true });
             console.log('✅ Modelele au fost sincronizate cu baza de date');
         } else {
             console.log('⚠️ Folosind baza de date în memorie ca fallback');
@@ -1807,12 +1807,33 @@ const startServer = async () => {
         // Inițializează baza de date
         await initializeDatabase();
         
-        // Pornește serverul
+        // Pornește serverul cu automatizare port fallback
         const PORT = process.env.PORT || 3000;
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(`🚀 Server pornit pe portul ${PORT}`);
             console.log(`🌐 Dashboard Admin: http://localhost:${PORT}`);
             console.log(`👥 Dashboard Client: http://localhost:${PORT}/client-dashboard`);
+        });
+        
+        // Automatizare port fallback pentru EADDRINUSE
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.log(`⚠️ Port ${PORT} ocupat, încerc portul ${PORT + 1}`);
+                const newPort = PORT + 1;
+                const newServer = app.listen(newPort, () => {
+                    console.log(`🚀 Server pornit pe portul ${newPort}`);
+                    console.log(`🌐 Dashboard Admin: http://localhost:${newPort}`);
+                    console.log(`👥 Dashboard Client: http://localhost:${newPort}/client-dashboard`);
+                });
+                
+                newServer.on('error', (err) => {
+                    console.error('❌ Eroare la pornirea serverului:', err);
+                    process.exit(1);
+                });
+            } else {
+                console.error('❌ Eroare la pornirea serverului:', err);
+                process.exit(1);
+            }
         });
     } catch (error) {
         console.error('❌ Eroare la pornirea serverului:', error);
