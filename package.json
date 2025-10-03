@@ -32,7 +32,11 @@
     "express-session": "^1.17.3",
     "connect-redis": "^7.1.0",
     "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1"
+    "winston-daily-rotate-file": "^4.7.1",
+    "compression": "^1.7.4",
+    "redis": "^4.6.10",
+    "node-cache": "^5.1.2",
+    "express-cache-controller": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

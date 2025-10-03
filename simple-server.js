@@ -35,6 +35,25 @@ const {
     getCaptchaStats
 } = require('./captcha');
 
+// Import optimizări de performanță
+const {
+    compressionMiddleware,
+    cacheHeaders,
+    performanceMonitoring,
+    cacheUtils,
+    performanceLogger,
+    cleanup
+} = require('./performance');
+
+// Import optimizări de bază de date
+const {
+    queryOptimizations,
+    virtualIndexes,
+    connectionOptimization,
+    cleanupOptimizations,
+    dbLogger
+} = require('./database-optimization');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'autofactura_secret_key_2024';
@@ -45,6 +64,11 @@ app.use(securityLogger); // Logging pentru securitate
 app.use(blockSuspiciousIPs); // Blocare IP-uri suspecte
 app.use(sanitizeInput); // Sanitizare input
 app.use(speedLimiter); // Slow down pentru brute force
+
+// Middleware de optimizare performanță
+app.use(compressionMiddleware); // Compression pentru response-uri
+app.use(cacheHeaders); // Cache headers pentru fișiere statice
+app.use(performanceMonitoring); // Monitoring performanță
 
 // Middleware standard
 app.use(cors({
@@ -445,30 +469,28 @@ app.post('/api/forgot-password', forgotPasswordRateLimit, validateForgotPassword
 // 7. Obține statistici - fără autentificare pentru dashboard
 app.get('/api/stats', (req, res) => {
     try {
-        const totalUsers = users.length;
-        const onlineUsers = users.filter(u => u.isOnline).length;
-        const totalLogins = loginHistory.length;
-        const totalActivity = userActivity.length;
-
-        // Statistici facturare
-        const totalClients = clients.length;
-        const totalProducts = products.length;
-        const totalInvoices = invoices.length;
-        const totalRevenue = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-
-        res.json({
-            totalUsers: totalUsers,
-            onlineUsers: onlineUsers,
-            totalLogins: totalLogins,
-            totalActivity: totalActivity,
-            activeUsers: onlineUsers,
-            totalClients: totalClients,
-            totalProducts: totalProducts,
-            totalInvoices: totalInvoices,
-            totalRevenue: totalRevenue
-        });
+        // Verifică cache-ul mai întâi
+        const cachedStats = cacheUtils.get('dashboard_stats');
+        if (cachedStats) {
+            performanceLogger.info('Cache hit for dashboard stats');
+            return res.json(cachedStats);
+        }
+        
+        // Dacă nu există în cache, calculează și cachează
+        const stats = queryOptimizations.getDashboardStats(users, invoices, clients);
+        
+        // Adaugă statistici suplimentare
+        const enhancedStats = {
+            ...stats,
+            totalLogins: loginHistory.length,
+            totalActivity: userActivity.length,
+            totalProducts: products.length
+        };
+        
+        cacheUtils.cacheStats(enhancedStats);
+        res.json(enhancedStats);
     } catch (error) {
-        console.error('Eroare la obținerea statisticilor:', error);
+        performanceLogger.error('Eroare la obținerea statisticilor:', error);
         res.status(500).json({ error: 'Eroare la obținerea statisticilor' });
     }
 });
@@ -499,14 +521,20 @@ app.get('/api/users', (req, res) => {
 // 9. Obține activitatea recentă (pentru dashboard)
 app.get('/api/activity', (req, res) => {
     try {
-        // Returnează activitatea reală din tracking
-        const activity = userActivity
-            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-            .slice(0, 50); // Ultimele 50 de activități
-
+        // Verifică cache-ul mai întâi
+        const cachedActivity = cacheUtils.get('recent_activity');
+        if (cachedActivity) {
+            performanceLogger.info('Cache hit for recent activity');
+            return res.json(cachedActivity);
+        }
+        
+        // Dacă nu există în cache, calculează și cachează
+        const activity = queryOptimizations.getRecentActivity(userActivity, 50);
+        cacheUtils.cacheActivity(activity);
+        
         res.json(activity);
     } catch (error) {
-        console.error('Eroare la obținerea activității:', error);
+        performanceLogger.error('Eroare la obținerea activității:', error);
         res.status(500).json({ error: 'Eroare la obținerea activității' });
     }
 });
@@ -545,10 +573,20 @@ app.delete('/api/users/:id', (req, res) => {
 // 11. Obține utilizatorii online
 app.get('/api/users/online', (req, res) => {
     try {
-        const onlineUsers = users.filter(u => u.isOnline);
+        // Verifică cache-ul mai întâi
+        const cachedOnlineUsers = cacheUtils.get('online_users');
+        if (cachedOnlineUsers) {
+            performanceLogger.info('Cache hit for online users');
+            return res.json(cachedOnlineUsers);
+        }
+        
+        // Dacă nu există în cache, calculează și cachează
+        const onlineUsers = queryOptimizations.getOnlineUsers(users);
+        cacheUtils.cacheOnlineUsers(onlineUsers);
+        
         res.json(onlineUsers);
     } catch (error) {
-        console.error('Eroare la obținerea utilizatorilor online:', error);
+        performanceLogger.error('Eroare la obținerea utilizatorilor online:', error);
         res.status(500).json({ error: 'Eroare la obținerea utilizatorilor online' });
     }
 });
@@ -1484,6 +1522,34 @@ app.get('/api/invoices/stats', authenticateToken, (req, res) => {
     }
 });
 
+// Cleanup și optimizări la startup
+console.log('🔧 Inițializare optimizări...');
+
+// Actualizează indexurile virtuale
+virtualIndexes.updateIndexes(users, userActivity, invoices);
+
+// Cleanup periodic pentru cache și memory
+setInterval(() => {
+    cleanup();
+    cleanupOptimizations();
+    virtualIndexes.updateIndexes(users, userActivity, invoices);
+}, 300000); // La fiecare 5 minute
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('🛑 Server se oprește...');
+    cleanup();
+    cleanupOptimizations();
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('🛑 Server se oprește...');
+    cleanup();
+    cleanupOptimizations();
+    process.exit(0);
+});
+
 // Pornire server
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server AutoFactura SIMPLU pornit pe portul ${PORT}`);
@@ -1492,4 +1558,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📊 Dashboard la: http://localhost:${PORT}/dashboard`);
     console.log(`🌍 Server accesibil de pe orice IP din rețea`);
     console.log(`📱 Pentru dispozitive Android, folosește IP-ul computerului: http://[IP_COMPUTER]:${PORT}/api`);
+    console.log(`⚡ Optimizări de performanță activate!`);
+    console.log(`📊 Monitoring și cache activat!`);
 });
