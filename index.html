@@ -405,15 +405,16 @@
                 let activityHTML = '';
 
                 activity.slice(0, 10).forEach(item => {
-                    const loginTime = new Date(item.loginTime).toLocaleString('ro-RO');
+                    const timestamp = new Date(item.timestamp).toLocaleString('ro-RO');
+                    const icon = item.type === 'user_registration' ? 'fas fa-user-plus' : 'fas fa-sign-in-alt';
                     activityHTML += `
                         <div class="activity-item">
                             <div class="activity-icon">
-                                <i class="fas fa-sign-in-alt"></i>
+                                <i class="${icon}"></i>
                             </div>
                             <div class="activity-content">
-                                <h4>${item.firstName} ${item.lastName}</h4>
-                                <p>Autentificare la ${loginTime}</p>
+                                <h4>${item.description}</h4>
+                                <p>${item.userEmail} - ${timestamp}</p>
                             </div>
                         </div>
                     `;
