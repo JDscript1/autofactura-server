@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
+const { sequelize, testConnection } = require('./db');
+const { User } = require('./models/User');
 
 // Import securitate avansată
 const {
@@ -79,7 +81,10 @@ app.use(performanceMonitoring); // Monitoring performanță
 
 // Middleware standard
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? ['https://yourdomain.com'] : true,
+    origin: process.env.NODE_ENV === 'production' ? [
+        'https://autofactura-server-2025-f3861df403b4.herokuapp.com',
+        'https://yourdomain.com'
+    ] : true,
     credentials: true
 }));
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -91,12 +96,37 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+// Middleware de logging pentru toate rutele
+app.use((req, res, next) => {
+    console.log(`🌐 Request: ${req.method} ${req.path} from ${req.ip}`);
+    next();
+});
+
 // Rate limiting pentru API
 app.use('/api', apiRateLimit);
 
 // Middleware static va fi mutat după rutele definite
 
-// Baza de date simplă în memorie (pentru test)
+// Inițializare bază de date Postgres
+const initializeDatabase = async () => {
+    try {
+        console.log('🔗 Inițializare bază de date...');
+        const connected = await testConnection();
+        if (connected) {
+            console.log('✅ Baza de date inițializată cu succes');
+            // Sincronizează modelele cu baza de date
+            await sequelize.sync({ force: false });
+            console.log('✅ Modelele au fost sincronizate cu baza de date');
+        } else {
+            console.log('⚠️ Folosind baza de date în memorie ca fallback');
+        }
+    } catch (error) {
+        console.error('❌ Eroare la inițializarea bazei de date:', error);
+        console.log('⚠️ Folosind baza de date în memorie ca fallback');
+    }
+};
+
+// Baza de date simplă în memorie (fallback)
 let users = [
     {
         id: 1,
@@ -178,7 +208,14 @@ app.post('/api/register', registerRateLimit, validateRegistration, handleValidat
         } = req.body;
 
         // Verifică dacă email-ul există deja
-        const existingUser = users.find(u => u.email === email);
+        let existingUser;
+        try {
+            existingUser = await User.findOne({ where: { email } });
+        } catch (error) {
+            // Fallback la baza de date în memorie
+            existingUser = users.find(u => u.email === email);
+        }
+        
         if (existingUser) {
             return res.status(400).json({ error: 'Email-ul există deja' });
         }
@@ -187,37 +224,68 @@ app.post('/api/register', registerRateLimit, validateRegistration, handleValidat
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Creează utilizatorul nou
-        const newUser = {
-            id: users.length + 1,
-            email,
-            password: hashedPassword,
-            firstName,
-            lastName,
-            companyName,
-            cui,
-            registrationNumber,
-            caenCode,
-            legalForm,
-            address,
-            phone,
-            website,
-            isVatPayer,
-            vatNumber,
-            countryCode,
-            iban,
-            bankName,
-            swiftCode,
-            legalRepresentativeName,
-            legalRepresentativePosition,
-            logoPath,
-            isAutoInvoiceEnabled,
-            defaultVatRate,
-            lastLogin: null,
-            isOnline: false,
-            createdAt: new Date().toISOString()
-        };
-
-        users.push(newUser);
+        let newUser;
+        try {
+            newUser = await User.create({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                companyName,
+                cui,
+                registrationNumber,
+                caenCode,
+                legalForm,
+                address,
+                phone,
+                website,
+                isVatPayer,
+                vatNumber,
+                countryCode,
+                iban,
+                bankName,
+                swiftCode,
+                legalRepresentativeName,
+                legalRepresentativePosition,
+                logoPath,
+                isAutoInvoiceEnabled,
+                defaultVatRate,
+                lastLogin: null,
+                isOnline: false
+            });
+        } catch (error) {
+            // Fallback la baza de date în memorie
+            newUser = {
+                id: users.length + 1,
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                companyName,
+                cui,
+                registrationNumber,
+                caenCode,
+                legalForm,
+                address,
+                phone,
+                website,
+                isVatPayer,
+                vatNumber,
+                countryCode,
+                iban,
+                bankName,
+                swiftCode,
+                legalRepresentativeName,
+                legalRepresentativePosition,
+                logoPath,
+                isAutoInvoiceEnabled,
+                defaultVatRate,
+                lastLogin: null,
+                isOnline: false,
+                createdAt: new Date().toISOString()
+            };
+            users.push(newUser);
+        }
 
         // Adaugă activitate pentru înregistrare
         const activity = {
@@ -259,7 +327,14 @@ app.post('/api/login', loginRateLimit, validateLogin, handleValidationErrors, as
     try {
         const { email, password } = req.body;
 
-        const user = users.find(u => u.email === email);
+        let user;
+        try {
+            user = await User.findOne({ where: { email } });
+        } catch (error) {
+            // Fallback la baza de date în memorie
+            user = users.find(u => u.email === email);
+        }
+        
         if (!user) {
             return res.status(401).json({ error: 'Email sau parolă incorectă' });
         }
@@ -491,7 +566,24 @@ app.get('/api/stats', (req, res) => {
         }
         
         // Dacă nu există în cache, calculează și cachează
-        const stats = queryOptimizations.getDashboardStats(users, invoices, clients);
+        let stats;
+        try {
+            // Încearcă să folosească Postgres
+            const totalUsers = await User.count();
+            const activeUsers = await User.count({ where: { isOnline: true } });
+            stats = {
+                totalUsers,
+                activeUsers,
+                totalLogins: loginHistory.length,
+                totalActivity: userActivity.length,
+                totalProducts: products.length,
+                totalInvoices: invoices.length,
+                totalClients: clients.length
+            };
+        } catch (error) {
+            // Fallback la baza de date în memorie
+            stats = queryOptimizations.getDashboardStats(users, invoices, clients);
+        }
         
         // Adaugă statistici suplimentare
         const enhancedStats = {
@@ -513,14 +605,33 @@ app.get('/api/stats', (req, res) => {
 app.get('/api/users', (req, res) => {
     try {
         console.log('🔍 API /api/users accesat');
-        console.log('📊 Numărul de utilizatori:', users.length);
         
-        const usersList = users.map(user => ({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            companyName: user.companyName,
+        let usersList;
+        try {
+            // Încearcă să folosească Postgres
+            const dbUsers = await User.findAll({
+                attributes: ['id', 'email', 'firstName', 'lastName', 'companyName', 'createdAt', 'lastLogin', 'isOnline']
+            });
+            usersList = dbUsers.map(user => ({
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                companyName: user.companyName,
+                createdAt: user.createdAt,
+                lastLogin: user.lastLogin,
+                isOnline: user.isOnline
+            }));
+            console.log('📊 Numărul de utilizatori din Postgres:', usersList.length);
+        } catch (error) {
+            // Fallback la baza de date în memorie
+            console.log('📊 Numărul de utilizatori din memorie:', users.length);
+            usersList = users.map(user => ({
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                companyName: user.companyName,
             phone: user.phone,
             address: user.address,
             isOnline: user.isOnline,
@@ -1577,22 +1688,7 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
-// Pornire server
-try {
-    app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server AutoFactura SIMPLU pornit pe portul ${PORT}`);
-    console.log(`📱 API disponibil la: http://localhost:${PORT}/api`);
-    console.log(`🌐 Interfața web la: http://localhost:${PORT}`);
-    console.log(`📊 Dashboard la: http://localhost:${PORT}/dashboard`);
-    console.log(`🌍 Server accesibil de pe orice IP din rețea`);
-    console.log(`📱 Pentru dispozitive Android, folosește IP-ul computerului: http://[IP_COMPUTER]:${PORT}/api`);
-    console.log(`⚡ Optimizări de performanță activate!`);
-    console.log(`📊 Monitoring și cache activat!`);
-    });
-} catch (error) {
-    console.error('❌ Eroare la pornirea serverului:', error);
-    process.exit(1);
-}
+// Serverul va fi pornit în funcția startServer()
 
 // ==================== RUTE STATICE (LA SFÂRȘITUL FIȘIERULUI) ====================
 
@@ -1649,6 +1745,25 @@ app.get('/test-client', (req, res) => {
     });
 });
 
+// Ruta de test simplă pentru verificare
+app.get('/test-simple', (req, res) => {
+    res.json({ 
+        message: 'Server funcționează!', 
+        timestamp: new Date().toISOString(),
+        status: 'OK'
+    });
+});
+
+// Ruta de test pentru verificarea rutei client-dashboard
+app.get('/test-client-dashboard', (req, res) => {
+    res.json({ 
+        message: 'Client dashboard route funcționează!', 
+        timestamp: new Date().toISOString(),
+        path: '/client-dashboard',
+        status: 'OK'
+    });
+});
+
 // Ruta de test pentru dashboard
 app.get('/test-dashboard', (req, res) => {
     res.json({ 
@@ -1686,8 +1801,24 @@ app.get('/dashboard', (req, res) => {
 // Servirea fișierelor statice (la sfârșitul fișierului, după toate rutele)
 app.use(express.static(__dirname));
 
-// Middleware de logging pentru toate rutele
-app.use((req, res, next) => {
-    console.log(`🌐 Request: ${req.method} ${req.path} from ${req.ip}`);
-    next();
-});
+// Inițializează baza de date și pornește serverul
+const startServer = async () => {
+    try {
+        // Inițializează baza de date
+        await initializeDatabase();
+        
+        // Pornește serverul
+        const PORT = process.env.PORT || 3000;
+        app.listen(PORT, () => {
+            console.log(`🚀 Server pornit pe portul ${PORT}`);
+            console.log(`🌐 Dashboard Admin: http://localhost:${PORT}`);
+            console.log(`👥 Dashboard Client: http://localhost:${PORT}/client-dashboard`);
+        });
+    } catch (error) {
+        console.error('❌ Eroare la pornirea serverului:', error);
+        process.exit(1);
+    }
+};
+
+// Pornește serverul
+startServer();
