@@ -84,10 +84,18 @@ app.use(cors({
 }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static(__dirname));
+
+// Middleware de debugging pentru API-uri
+app.use('/api', (req, res, next) => {
+    console.log(`🔍 API Request: ${req.method} ${req.path} from ${req.ip}`);
+    next();
+});
 
 // Rate limiting pentru API
 app.use('/api', apiRateLimit);
+
+// Servirea fișierelor statice (după API-uri pentru a evita conflictele)
+app.use(express.static(__dirname));
 
 // Baza de date simplă în memorie (pentru test)
 let users = [
@@ -505,6 +513,9 @@ app.get('/api/stats', (req, res) => {
 // 8. Obține lista utilizatorilor (pentru dashboard)
 app.get('/api/users', (req, res) => {
     try {
+        console.log('🔍 API /api/users accesat');
+        console.log('📊 Numărul de utilizatori:', users.length);
+        
         const usersList = users.map(user => ({
             id: user.id,
             email: user.email,
@@ -518,9 +529,10 @@ app.get('/api/users', (req, res) => {
             createdAt: user.createdAt
         }));
 
+        console.log('✅ Utilizatori returnați:', usersList.length);
         res.json(usersList);
     } catch (error) {
-        console.error('Eroare la obținerea utilizatorilor:', error);
+        console.error('❌ Eroare la obținerea utilizatorilor:', error);
         res.status(500).json({ error: 'Eroare la obținerea utilizatorilor' });
     }
 });
@@ -528,9 +540,13 @@ app.get('/api/users', (req, res) => {
 // 9. Obține activitatea recentă (pentru dashboard)
 app.get('/api/activity', (req, res) => {
     try {
+        console.log('🔍 API /api/activity accesat');
+        console.log('📊 Numărul de activități:', userActivity.length);
+        
         // Verifică cache-ul mai întâi
         const cachedActivity = cacheUtils.get('recent_activity');
         if (cachedActivity) {
+            console.log('✅ Cache hit for recent activity');
             performanceLogger.info('Cache hit for recent activity');
             return res.json(cachedActivity);
         }
@@ -539,8 +555,10 @@ app.get('/api/activity', (req, res) => {
         const activity = queryOptimizations.getRecentActivity(userActivity, 50);
         cacheUtils.cacheActivity(activity);
         
+        console.log('✅ Activitate returnată:', activity.length);
         res.json(activity);
     } catch (error) {
+        console.error('❌ Eroare la obținerea activității:', error);
         performanceLogger.error('Eroare la obținerea activității:', error);
         res.status(500).json({ error: 'Eroare la obținerea activității' });
     }
@@ -834,59 +852,7 @@ app.get('/ping', (req, res) => {
     res.json({ status: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Servirea paginii principale (Dashboard admin)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/admin-dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Servirea paginii de resetare parolă
-app.get('/reset-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'reset-password.html'));
-});
-
-// ==================== INTERFAȚĂ WEB PENTRU CLIENȚI ====================
-
-// Servirea paginilor pentru clienți
-app.get('/client-login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-login.html'));
-});
-
-app.get('/client-signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-signup.html'));
-});
-
-app.get('/client-forgot-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
-});
-
-app.get('/client-dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
-});
-
-// Rute alternative pentru clienți (fără prefix)
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-login.html'));
-});
-
-app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-signup.html'));
-});
-
-app.get('/forgot-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
-});
+// ==================== RUTE STATICE (LA SFÂRȘITUL FIȘIERULUI) ====================
 
 // Endpoint pentru verificarea token-ului
 app.get('/api/verify-token', authenticateToken, (req, res) => {
@@ -1628,3 +1594,59 @@ try {
     console.error('❌ Eroare la pornirea serverului:', error);
     process.exit(1);
 }
+
+// ==================== RUTE STATICE (LA SFÂRȘITUL FIȘIERULUI) ====================
+
+// Servirea paginii principale (Dashboard admin)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Servirea paginii de resetare parolă
+app.get('/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'reset-password.html'));
+});
+
+// ==================== INTERFAȚĂ WEB PENTRU CLIENȚI ====================
+
+// Servirea paginilor pentru clienți
+app.get('/client-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-login.html'));
+});
+
+app.get('/client-signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-signup.html'));
+});
+
+app.get('/client-forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
+});
+
+app.get('/client-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+});
+
+// Rute alternative pentru clienți (fără prefix)
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-signup.html'));
+});
+
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+});
