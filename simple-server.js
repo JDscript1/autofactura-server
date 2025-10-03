@@ -813,6 +813,29 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Rute de testare
+app.get('/test', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        message: 'Server AutoFactura funcționează!',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+    });
+});
+
+app.get('/ping', (req, res) => {
+    res.json({ status: 'pong', timestamp: new Date().toISOString() });
+});
+
+// Servirea paginii principale
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Servirea paginii de resetare parolă
 app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'reset-password.html'));
