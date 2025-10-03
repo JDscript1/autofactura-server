@@ -70,6 +70,26 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        .admin-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .admin-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -274,6 +294,15 @@
                 gap: 15px;
                 text-align: center;
             }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .admin-btn {
+                order: -1;
+            }
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -292,6 +321,9 @@
                 <i class="fas fa-file-invoice"></i> AutoFactura
             </div>
             <div class="user-info">
+                <button class="admin-btn" onclick="window.open('/', '_blank')" title="Dashboard Administrator">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
                 <div class="user-avatar">
                     <i class="fas fa-user"></i>
                 </div>

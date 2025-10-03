@@ -94,8 +94,7 @@ app.use('/api', (req, res, next) => {
 // Rate limiting pentru API
 app.use('/api', apiRateLimit);
 
-// Servirea fișierelor statice (după API-uri pentru a evita conflictele)
-app.use(express.static(__dirname));
+// Middleware static va fi mutat după rutele definite
 
 // Baza de date simplă în memorie (pentru test)
 let users = [
@@ -1650,6 +1649,15 @@ app.get('/test-client', (req, res) => {
     });
 });
 
+// Ruta de test pentru dashboard
+app.get('/test-dashboard', (req, res) => {
+    res.json({ 
+        message: 'Dashboard clienți funcționează!', 
+        timestamp: new Date().toISOString(),
+        path: '/dashboard'
+    });
+});
+
 // Rute alternative pentru clienți (fără prefix)
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'client-login.html'));
@@ -1663,6 +1671,23 @@ app.get('/forgot-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
 });
 
+// Ruta /dashboard pentru clienți (după client-dashboard pentru prioritate)
 app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+    console.log('🔍 Dashboard clienți accesat');
+    try {
+        res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+        console.log('✅ Dashboard clienți servit cu succes');
+    } catch (error) {
+        console.error('❌ Eroare la servirea dashboard clienți:', error);
+        res.status(500).send('Eroare la servirea paginii');
+    }
+});
+
+// Servirea fișierelor statice (la sfârșitul fișierului, după toate rutele)
+app.use(express.static(__dirname));
+
+// Middleware de logging pentru toate rutele
+app.use((req, res, next) => {
+    console.log(`🌐 Request: ${req.method} ${req.path} from ${req.ip}`);
+    next();
 });
