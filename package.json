@@ -38,8 +38,8 @@
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": "18.19.0",
-    "npm": "10.2.3"
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
   },
   "cacheDirectories": [
     "node_modules"
