@@ -1631,7 +1631,23 @@ app.get('/client-forgot-password', (req, res) => {
 });
 
 app.get('/client-dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+    console.log('🔍 Client dashboard accesat');
+    try {
+        res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+        console.log('✅ Client dashboard servit cu succes');
+    } catch (error) {
+        console.error('❌ Eroare la servirea client dashboard:', error);
+        res.status(500).send('Eroare la servirea paginii');
+    }
+});
+
+// Ruta de test pentru client dashboard
+app.get('/test-client', (req, res) => {
+    res.json({ 
+        message: 'Client dashboard funcționează!', 
+        timestamp: new Date().toISOString(),
+        path: '/client-dashboard'
+    });
 });
 
 // Rute alternative pentru clienți (fără prefix)
