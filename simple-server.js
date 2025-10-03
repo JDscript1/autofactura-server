@@ -556,7 +556,7 @@ app.post('/api/forgot-password', forgotPasswordRateLimit, validateForgotPassword
 });
 
 // 7. Obține statistici - fără autentificare pentru dashboard
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
     try {
         // Verifică cache-ul mai întâi
         const cachedStats = cacheUtils.get('dashboard_stats');
@@ -602,7 +602,7 @@ app.get('/api/stats', (req, res) => {
 });
 
 // 8. Obține lista utilizatorilor (pentru dashboard)
-app.get('/api/users', (req, res) => {
+app.get('/api/users', async (req, res) => {
     try {
         console.log('🔍 API /api/users accesat');
         
