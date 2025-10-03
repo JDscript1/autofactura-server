@@ -19,6 +19,8 @@ app.use(express.static(__dirname));
 // Inițializare baza de date și sincronizare modele
 const initializeDatabase = async () => {
     try {
+        console.log('🔗 Încearcă să se conecteze la baza de date...');
+        
         // Testează conexiunea
         const connected = await testConnection();
         if (!connected) {
