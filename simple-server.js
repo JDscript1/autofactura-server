@@ -834,12 +834,16 @@ app.get('/ping', (req, res) => {
     res.json({ status: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Servirea paginii principale
+// Servirea paginii principale (Dashboard admin)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin-dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -864,6 +868,23 @@ app.get('/client-forgot-password', (req, res) => {
 });
 
 app.get('/client-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-dashboard.html'));
+});
+
+// Rute alternative pentru clienți (fără prefix)
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-signup.html'));
+});
+
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client-forgot-password.html'));
+});
+
+app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'client-dashboard.html'));
 });
 
