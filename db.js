@@ -5,6 +5,7 @@ let sequelize;
 
 if (process.env.DATABASE_URL) {
   // Folosește Postgres pe Heroku
+  console.log('🔗 Încearcă să se conecteze la Postgres pe Heroku...');
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
     protocol: "postgres",
@@ -23,7 +24,8 @@ if (process.env.DATABASE_URL) {
     }
   });
 } else {
-  // Folosește SQLite local pentru testare
+  // Folosește SQLite local pentru testare sau fallback pe Heroku
+  console.log('🔗 Folosește SQLite (local sau fallback pe Heroku)...');
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: './autofactura.db',

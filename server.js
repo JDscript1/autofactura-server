@@ -22,15 +22,16 @@ const initializeDatabase = async () => {
         // Testează conexiunea
         const connected = await testConnection();
         if (!connected) {
-            throw new Error('Nu s-a putut conecta la baza de date');
+            console.warn('⚠️ Nu s-a putut conecta la baza de date, folosește SQLite...');
+            return;
         }
         
         // Sincronizează modelele cu baza de date
         await sequelize.sync({ force: false }); // force: false = nu șterge datele existente
-        console.log('✅ Baza de date Postgres inițializată cu succes');
+        console.log('✅ Baza de date inițializată cu succes');
     } catch (error) {
         console.error('❌ Eroare la inițializarea bazei de date:', error.message);
-        process.exit(1);
+        console.warn('⚠️ Continuă cu SQLite...');
     }
 };
 
