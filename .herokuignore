@@ -1,0 +1,39 @@
+# Exclude fișiere inutile pentru Heroku
+node_modules/
+.git/
+.gitignore
+README.md
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Exclude fișiere de development
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Exclude fișiere de test
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Exclude fișiere de build
+build/
+dist/
+coverage/
+
+# Exclude fișiere de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude fișiere de backup
+*.bak
+*.backup

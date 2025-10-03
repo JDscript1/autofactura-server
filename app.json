@@ -1,0 +1,45 @@
+{
+  "name": "AutoFactura Server",
+  "description": "AutoFactura Server - API REST pentru aplicația Android",
+  "repository": "https://github.com/your-username/your-repo",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": [
+    "autofactura",
+    "invoice",
+    "android",
+    "api",
+    "rest",
+    "node",
+    "express"
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment for the application",
+      "value": "production"
+    },
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Install only production dependencies",
+      "value": "true"
+    },
+    "NPM_CONFIG_LOGLEVEL": {
+      "description": "NPM log level",
+      "value": "error"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    }
+  ]
+}
