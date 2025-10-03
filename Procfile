@@ -1,2 +1,2 @@
-web: node simple-server.js
+web: node test-simple.js
 release: echo "Release phase completed"
