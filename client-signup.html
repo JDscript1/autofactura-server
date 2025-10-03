@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFactura - Înregistrare Client</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .signup-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(149, 165, 166, 0.3);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            color: #27ae60;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .links a {
+            color: #7f8c8d;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #3498db;
+        }
+
+        .password-strength {
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .strength-weak { color: #e74c3c; }
+        .strength-medium { color: #f39c12; }
+        .strength-strong { color: #27ae60; }
+
+        .password-requirements {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .password-requirements ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .password-requirements li {
+            margin-bottom: 5px;
+        }
+
+        .password-requirements li.valid {
+            color: #27ae60;
+        }
+
+        .password-requirements li.invalid {
+            color: #e74c3c;
+        }
+
+        .captcha-question {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        #captchaContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-refresh {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            align-self: flex-start;
+            transition: background 0.3s ease;
+        }
+
+        .btn-refresh:hover {
+            background: #2980b9;
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 20px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="logo">
+            <i class="fas fa-file-invoice"></i> AutoFactura
+        </div>
+        
+        <h1>Creează cont nou</h1>
+        <p class="subtitle">Înregistrează-te pentru a gestiona facturile online</p>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+
+        <form id="signupForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">Prenume</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Nume</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="companyName">Numele companiei (opțional)</label>
+                <input type="text" id="companyName" name="companyName">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Parolă</label>
+                <input type="password" id="password" name="password" required>
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirmă parola</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+
+            <div class="password-requirements">
+                <strong>Cerințe pentru parolă:</strong>
+                <ul>
+                    <li id="req-length">Cel puțin 8 caractere</li>
+                    <li id="req-uppercase">Cel puțin o literă mare</li>
+                    <li id="req-lowercase">Cel puțin o literă mică</li>
+                    <li id="req-number">Cel puțin o cifră</li>
+                    <li id="req-match">Parolele să coincidă</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label for="captchaAnswer">Verificare umană</label>
+                <div id="captchaContainer">
+                    <div id="captchaQuestion" class="captcha-question"></div>
+                    <input type="text" id="captchaAnswer" name="captchaAnswer" required placeholder="Introduceți răspunsul">
+                    <button type="button" id="refreshCaptcha" class="btn-refresh">🔄</button>
+                </div>
+                <input type="hidden" id="captchaToken" name="captchaToken">
+            </div>
+
+            <button type="submit" class="btn" id="signupBtn">
+                <i class="fas fa-user-plus"></i> Creează cont
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Se creează contul...</p>
+        </div>
+
+        <div class="links">
+            <a href="/client-login.html">← Înapoi la login</a>
+        </div>
+    </div>
+
+    <script>
+        // Elemente DOM
+        const signupForm = document.getElementById('signupForm');
+        const signupBtn = document.getElementById('signupBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        // Verifică cerințele pentru parolă
+        function checkPasswordRequirements(password) {
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /\d/.test(password)
+            };
+
+            // Actualizează vizual cerințele
+            document.getElementById('req-length').className = requirements.length ? 'valid' : 'invalid';
+            document.getElementById('req-uppercase').className = requirements.uppercase ? 'valid' : 'invalid';
+            document.getElementById('req-lowercase').className = requirements.lowercase ? 'valid' : 'invalid';
+            document.getElementById('req-number').className = requirements.number ? 'valid' : 'invalid';
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        // Verifică dacă parolele coincid
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const match = password === confirmPassword;
+            document.getElementById('req-match').className = match ? 'valid' : 'invalid';
+            return match;
+        }
+
+        // Calculează puterea parolei
+        function calculatePasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            const strengthElement = document.getElementById('passwordStrength');
+            if (strength < 2) {
+                strengthElement.textContent = 'Parolă slabă';
+                strengthElement.className = 'password-strength strength-weak';
+            } else if (strength < 4) {
+                strengthElement.textContent = 'Parolă medie';
+                strengthElement.className = 'password-strength strength-medium';
+            } else {
+                strengthElement.textContent = 'Parolă puternică';
+                strengthElement.className = 'password-strength strength-strong';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('password').addEventListener('input', function() {
+            checkPasswordRequirements(this.value);
+            calculatePasswordStrength(this.value);
+            checkPasswordMatch();
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            checkPasswordMatch();
+        });
+
+        // CAPTCHA functionality
+        let currentCaptcha = null;
+
+        async function loadCaptcha() {
+            try {
+                const response = await fetch('/api/captcha/generate');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentCaptcha = data.captcha;
+                    document.getElementById('captchaQuestion').textContent = currentCaptcha.question;
+                    document.getElementById('captchaToken').value = currentCaptcha.token;
+                    document.getElementById('captchaAnswer').value = '';
+                } else {
+                    showError('Eroare la încărcarea CAPTCHA-ului');
+                }
+            } catch (error) {
+                showError('Eroare de conexiune la încărcarea CAPTCHA-ului');
+            }
+        }
+
+        // Buton refresh CAPTCHA
+        document.getElementById('refreshCaptcha').addEventListener('click', loadCaptcha);
+
+        // Încarcă CAPTCHA la pornirea paginii
+        window.addEventListener('load', loadCaptcha);
+
+        // Funcții pentru mesaje
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Submit form
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            hideMessages();
+
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const companyName = document.getElementById('companyName').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validări
+            if (!checkPasswordRequirements(password)) {
+                showError('Parola nu îndeplinește toate cerințele!');
+                return;
+            }
+
+            if (!checkPasswordMatch()) {
+                showError('Parolele nu coincid!');
+                return;
+            }
+
+            // Verifică CAPTCHA-ul
+            const captchaToken = document.getElementById('captchaToken').value;
+            const captchaAnswer = document.getElementById('captchaAnswer').value;
+
+            if (!captchaToken || !captchaAnswer) {
+                showError('Completați verificarea umană!');
+                return;
+            }
+
+            // Verifică CAPTCHA-ul pe server
+            try {
+                const captchaResponse = await fetch('/api/captcha/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: captchaToken,
+                        answer: captchaAnswer
+                    })
+                });
+
+                const captchaResult = await captchaResponse.json();
+                
+                if (!captchaResult.success) {
+                    showError(captchaResult.error || 'Verificarea umană a eșuat!');
+                    loadCaptcha(); // Încarcă un CAPTCHA nou
+                    return;
+                }
+            } catch (error) {
+                showError('Eroare la verificarea CAPTCHA-ului!');
+                return;
+            }
+
+            // Afișează loading
+            signupBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        firstName: firstName,
+                        lastName: lastName,
+                        email: email,
+                        companyName: companyName,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Cont creat cu succes! Redirecționare către login...');
+                    
+                    // Redirecționează către login după 2 secunde
+                    setTimeout(() => {
+                        window.location.href = '/client-login.html';
+                    }, 2000);
+                } else {
+                    showError(data.error || 'Eroare la crearea contului!');
+                }
+            } catch (error) {
+                showError('Eroare de conexiune! Vă rugăm să încercați din nou.');
+            } finally {
+                signupBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
